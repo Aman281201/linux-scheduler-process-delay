@@ -1,0 +1,12 @@
+diff --git a/linux-5.14.3/include/linux/sched.h b/org/linux-5.14.3/include/linux/sched.h
+index c64835a..ec8d07d 100644
+--- a/linux-5.14.3/include/linux/sched.h
++++ b/org/linux-5.14.3/include/linux/sched.h
+@@ -475,7 +475,6 @@ struct sched_entity {
+ 	u64				prev_sum_exec_runtime;
+ 
+ 	u64				nr_migrations;
+-	u64				delayAdd;
+ 
+ 	struct sched_statistics		statistics;
+ 

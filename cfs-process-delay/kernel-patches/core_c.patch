@@ -1,0 +1,13 @@
+diff --git a/linux-5.14.3/kernel/sched/core.c b/org/linux-5.14.3/kernel/sched/core.c
+index 1dac488..f3b27c6 100644
+--- a/linux-5.14.3/kernel/sched/core.c
++++ b/org/linux-5.14.3/kernel/sched/core.c
+@@ -3943,8 +3943,6 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
+ 	p->se.prev_sum_exec_runtime	= 0;
+ 	p->se.nr_migrations		= 0;
+ 	p->se.vruntime			= 0;
+-
+-	p->se.delayAdd 			= 0;
+ 	INIT_LIST_HEAD(&p->se.group_node);
+ 
+ #ifdef CONFIG_FAIR_GROUP_SCHED

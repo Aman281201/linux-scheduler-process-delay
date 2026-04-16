@@ -1,0 +1,184 @@
+diff --git a/linux-5.14.3/kernel/sched/fair.c b/org/linux-5.14.3/kernel/sched/fair.c
+index 9ab8976..44c4520 100644
+--- a/linux-5.14.3/kernel/sched/fair.c
++++ b/org/linux-5.14.3/kernel/sched/fair.c
+@@ -790,12 +790,6 @@ static void update_tg_load_avg(struct cfs_rq *cfs_rq)
+ /*
+  * Update the current task's runtime statistics.
+  */
+-
+-// void setDelay(int del = 0)
+-// {
+-// 	delay =  del;
+-// }
+-
+ static void update_curr(struct cfs_rq *cfs_rq)
+ {
+ 	struct sched_entity *curr = cfs_rq->curr;
+@@ -816,9 +810,8 @@ static void update_curr(struct cfs_rq *cfs_rq)
+ 
+ 	curr->sum_exec_runtime += delta_exec;
+ 	schedstat_add(cfs_rq->exec_clock, delta_exec);
+-	
+-	
+-	curr->vruntime += calc_delta_fair(delta_exec, curr) + curr->delayAdd;
++
++	curr->vruntime += calc_delta_fair(delta_exec, curr);
+ 	update_min_vruntime(cfs_rq);
+ 
+ 	if (entity_is_task(curr)) {
+
+
+
+diff --git a/linux-5.14.3/kernel/sched/core.c b/org/linux-5.14.3/kernel/sched/core.c
+index 1dac488..f3b27c6 100644
+--- a/linux-5.14.3/kernel/sched/core.c
++++ b/org/linux-5.14.3/kernel/sched/core.c
+@@ -3943,8 +3943,6 @@ static void __sched_fork(unsigned long clone_flags, struct task_struct *p)
+ 	p->se.prev_sum_exec_runtime	= 0;
+ 	p->se.nr_migrations		= 0;
+ 	p->se.vruntime			= 0;
+-
+-	p->se.delayAdd 			= 0;
+ 	INIT_LIST_HEAD(&p->se.group_node);
+ 
+ #ifdef CONFIG_FAIR_GROUP_SCHED
+
+
+
+diff --git a/linux-5.14.3/kernel/sys.c b/org/linux-5.14.3/kernel/sys.c
+index f420b55..ef1a78f 100644
+--- a/linux-5.14.3/kernel/sys.c
++++ b/org/linux-5.14.3/kernel/sys.c
+@@ -74,23 +74,6 @@
+ 
+ #include "uid16.h"
+ 
+-#include <linux/kernel.h>
+-#include <linux/init.h>
+-#include <linux/syscalls.h>
+-#include <linux/printk.h>
+-#include <linux/module.h>
+-#include <asm/uaccess.h>
+-#include <linux/fs.h> 
+-#include <linux/cdev.h>
+-#include <linux/proc_fs.h>
+-#include <linux/pid.h>
+-#include <linux/pid_namespace.h>
+-#include <linux/sched.h>
+-#include <linux/string.h>
+-#include <linux/errno.h>
+-#include <linux/uaccess.h>
+-#include <linux/mm.h>
+-
+ #ifndef SET_UNALIGN_CTL
+ # define SET_UNALIGN_CTL(a, b)	(-EINVAL)
+ #endif
+@@ -217,22 +200,6 @@ out:
+ 	return error;
+ }
+ 
+-SYSCALL_DEFINE4(kernel_2d_memcpy, float*, final, float*, input, int, r, int, c){
+-
+-	int err = 0;
+-	float out[r][c];
+-	if(__copy_from_user(out, input, sizeof(out))){
+-		err = -EFAULT;
+-	}
+-	if(__copy_to_user(final, out, sizeof(out))){
+-		err = -EFAULT;
+-	}
+-	return err;
+-
+-}
+-
+-
+-
+ SYSCALL_DEFINE3(setpriority, int, which, int, who, int, niceval)
+ {
+ 	struct task_struct *g, *p;
+@@ -1068,56 +1035,6 @@ COMPAT_SYSCALL_DEFINE1(times, struct compat_tms __user *, tbuf)
+  *
+  * !PF_FORKNOEXEC check to conform completely to POSIX.
+  */
+-SYSCALL_DEFINE2(higgsCall_delay, int, pid, int, delay)
+-{
+-	struct pid *pid_struct = NULL;
+-	struct task_struct *process;
+-
+-	pid_struct = find_get_pid(pid);
+-	if(pid_struct==NULL){
+-		return -ESRCH;
+-	}
+-	process = pid_task(pid_struct,PIDTYPE_PID);
+-
+-	process->se.delayAdd = delay*1000000;
+-
+-	return 0;
+-	// printk(KERN_ALERT "Value of real time req of PID: %d changed to %llu succesfully\n",pid,process->se.rt_val);
+-
+-	// return 0;
+-	// struct getAttributes {
+-	// int size;
+-	// int sched_policy;
+-	// long sched_flags;
+-	// int sched_nice;
+-	// int sched_priority;
+-	// long sched_runtime;
+-	// long sched_deadline;
+-	// long sched_period;
+-	// };
+-	// getAttributes attr;
+-
+-	// int check1, check2;
+-	// check1 = syscall(SYS_sched_getattr, pid, &attr, sizeof(attr), 0);
+-
+-	// int newNice;
+-	// double newWeight = ((attr.sched_runtime * pow(1.25,attr.sched_nice) + delay)/attr.sched_runtime);
+-	// double newN = log(newWeight)/log(1.25);
+-	// newNice = (int)(newN);
+-
+-	// char *n,*p;
+-	// char buffer[100];
+-	// asprintf(&n,"%d",newNice);
+-	// asprintf(&p,"%d",pid);
+-
+-	// strcpy(buffer,"renice ");
+-	// strcat(buffer,n);
+-	// strcat(buffer," ");
+-	// strcat(buffer,p);
+-
+-	// check2 = system(buffer);
+-
+-}
+ SYSCALL_DEFINE2(setpgid, pid_t, pid, pid_t, pgid)
+ {
+ 	struct task_struct *p;
+
+
+
+
+diff --git a/linux-5.14.3/include/linux/sched.h b/org/linux-5.14.3/include/linux/sched.h
+index c64835a..ec8d07d 100644
+--- a/linux-5.14.3/include/linux/sched.h
++++ b/org/linux-5.14.3/include/linux/sched.h
+@@ -475,7 +475,6 @@ struct sched_entity {
+ 	u64				prev_sum_exec_runtime;
+ 
+ 	u64				nr_migrations;
+-	u64				delayAdd;
+ 
+ 	struct sched_statistics		statistics;
+
+
+
+
+346,347d345
+< 335	common  kernel_2d_memcpy	sys_kernel_2d_memcpy
+< 
+374d371
+< 448	common	higgsCall_delay		sys_higgsCall_delay
+
+ 
+
+

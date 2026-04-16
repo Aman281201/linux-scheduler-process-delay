@@ -1,0 +1,172 @@
+diff org/linux-5.14.3/kernel/sys.c linux-5.14.3/kernel/sys.c
+76a77,93
+> #include <linux/kernel.h>
+> #include <linux/init.h>
+> #include <linux/syscalls.h>
+> #include <linux/printk.h>
+> #include <linux/module.h>
+> #include <asm/uaccess.h>
+> #include <linux/fs.h> 
+> #include <linux/cdev.h>
+> #include <linux/proc_fs.h>
+> #include <linux/pid.h>
+> #include <linux/pid_namespace.h>
+> #include <linux/sched.h>
+> #include <linux/string.h>
+> #include <linux/errno.h>
+> #include <linux/uaccess.h>
+> #include <linux/mm.h>
+> 
+202a220,235
+> SYSCALL_DEFINE4(kernel_2d_memcpy, float*, final, float*, input, int, r, int, c){
+> 
+> 	int err = 0;
+> 	float out[r][c];
+> 	if(__copy_from_user(out, input, sizeof(out))){
+> 		err = -EFAULT;
+> 	}
+> 	if(__copy_to_user(final, out, sizeof(out))){
+> 		err = -EFAULT;
+> 	}
+> 	return err;
+> 
+> }
+> 
+> 
+> 
+1037a1071,1205
+> 
+> int semaphore;
+> 
+> struct Node {
+>     char* data;
+>     struct Node* next;
+> };
+> 
+> struct Node* start;
+> struct Node* tail;
+> struct Node* itr;
+> char *msg;
+> 
+> 
+> 
+> struct semaphore s1;
+> 
+> SYSCALL_DEFINE0(higgsQueue)
+> {
+> 	start = NULL;
+> 	tail = NULL;
+> 	itr = NULL;
+> 	semaphore = 1;
+> 	return 0;
+> }
+> 
+> SYSCALL_DEFINE1(writeCall,char*,input)
+> {
+> 	while(semaphore!= 1)
+> 	{}
+> 
+> 	semaphore = 0;
+> 	//sem_wait(&lock);
+> 
+> 
+> 
+> 	// char out[8];
+> 	
+> 	if(__copy_from_user(msg, input, 8*sizeof(char))){
+> 		int err = -EFAULT;
+> 	}
+> 
+> 	//write(fw,out,sizeof(input));
+> 	//enQueue();
+> 	struct Node *nptr = kmalloc(sizeof(struct Node*), GFP_KERNEL);
+> 
+> 	nptr->data = msg;
+>     nptr->next = NULL;
+>     
+>     // printk("%s\n",msg);
+>     if(start == NULL)
+>         {
+> 			start = kmalloc(sizeof(struct Node*),GFP_KERNEL);
+> 			tail = kmalloc(sizeof(struct Node*),GFP_KERNEL);
+>             start = nptr;
+>             tail = start;
+>         }
+>     else{
+>     
+>         tail->next = nptr;
+>         tail = nptr;
+>     }
+> 
+> 	semaphore = 1;
+> 	return 0;
+> }
+> 
+> SYSCALL_DEFINE0(readCall)
+> {
+> 	//sem_wait(&lock);
+> 	while(semaphore != 1)
+> 	{}
+> 
+> 	semaphore = 0;
+> 
+> 	char r[8];
+> 	
+> 	//deQueue();
+> 	        if(start == NULL)
+>         {
+>             printk("underflow\n");
+>             return -1;
+>         }
+>         if(start == tail)
+>         {start = NULL;
+>         tail = start;
+>         }
+>         else {
+>             itr = start;
+>             start = start->next;
+>             itr->next = NULL;
+> 
+> 			msg = itr->data;
+>             
+>         }
+> 
+> 	if(memcpy(r, msg, sizeof(char)*8)){
+> 		int err = -EFAULT;
+> 	}
+> 	
+> 	int i;
+> 
+> 	printk("dequeued data:\n");
+> 	for(i = 0; i < 8; i++)
+> 	{
+> 		//printk("%x",r[i]);
+> 		printk("%hhd\n",r[i]);
+> 	}
+> 
+> 
+> 	semaphore = 1;	
+> 
+> 	//sem_post(&lock);
+> 	return 0;
+> }
+> 
+> 
+> 
+> SYSCALL_DEFINE2(higgsCall_delay, int, pid, int, delay)
+> {
+> 	struct pid *pid_struct = NULL;
+> 	struct task_struct *process;
+> 
+> 	pid_struct = find_get_pid(pid);
+> 	if(pid_struct==NULL){
+> 		return -ESRCH;
+> 	}
+> 	process = pid_task(pid_struct,PIDTYPE_PID);
+> 
+> 	process->se.delayAdd = delay*1000000;
+> 
+> 	return 0;
+> 
+> 
+> }
