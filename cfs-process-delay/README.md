@@ -14,19 +14,17 @@ CFS (Completely Fair Scheduler) was the default Linux scheduler from 2.6.23 till
 
 I added a new field `delayAdd` in `struct sched_entity` and a system call `higgsCall_delay(pid, delay)` which sets this field for any process. Then in `update_curr()` in `kernel/sched/fair.c` I am adding `delayAdd` to `vruntime` along with the normal increment:
 
-```c
+```
 curr->vruntime += calc_delta_fair(delta_exec, curr) + curr->delayAdd;
 ```
 
 So a process with a delay set looks like it has run much more than it actually did. It moves to the right side of the tree and other tasks on that CPU get picked before it.
 
-### What I understood after testing it
-
-When I started I thought of this as a way to throttle a process, but after reading the scheduler code properly that is not exactly what happens.
-
+### The Idea
+ 
 1. If the delayed process is alone on a CPU it runs at full speed. There is no one else to pick so the high `vruntime` does not matter.
 2. The delay is not added per ms. It gets added every time `update_curr()` runs for that task, and `update_curr()` is called on every scheduler tick and also on enqueue, dequeue, wakeup preemption check, yield etc. So the actual penalty depends on how busy the system is.
-3. With a big value like 1000 ms the process almost stops whenever a normal process is waiting on the same CPU, and then runs fully once that CPU is free. So it behaves more like a very low priority task (close to `SCHED_IDLE`) and not like a slightly higher nice value.
+3. With a big value the process almost stops whenever a normal process is waiting on the same CPU, and then runs fully once that CPU is free. So it behaves more like a very low priority task (close to `SCHED_IDLE`) and not like a slightly higher nice value.
 4. `vruntime` is only compared inside one CPU's run queue. The load balancer looks at weight and not at `vruntime`, so on a multi core machine a delayed process can still finish before some normal processes.
 
 Full details, patches and test are in [`cfs-process-delay/`](./cfs-process-delay).
